@@ -41,12 +41,7 @@ public class ImageSearchController {
         }
         try {
             ImageSearchResult result = imageMatchProvider.findBestMatch(file.getBytes());
-            if (result.isMatched()) {
-                return ResponseEntity.ok(
-                        ImageSearchResponse.matched(result.getMatch(), result.getHammingDistance()));
-            }
-            return ResponseEntity.ok(ImageSearchResponse.noMatch(
-                    result.getHammingDistance() < 0 ? null : result.getHammingDistance()));
+            return ResponseEntity.ok(ImageSearchResponse.fromResult(result));
         } catch (InvalidImageException e) {
             return ResponseEntity.badRequest().body(ImageSearchResponse.error(e.getMessage()));
         } catch (IOException e) {
@@ -65,6 +60,10 @@ public class ImageSearchController {
         try {
             ImageSearchResult result = imageMatchProvider.findBestMatch(file.getBytes());
             model.addAttribute("result", result);
+            model.addAttribute("webIdentification", result.getWebIdentification());
+            model.addAttribute("youTubeVideos", result.getYouTubeVideos());
+            model.addAttribute("webError", result.getWebError());
+            model.addAttribute("youTubeError", result.getYouTubeError());
             if (result.isMatched()) {
                 model.addAttribute("item", result.getMatch());
                 model.addAttribute("songs", result.getMatch().relatedOfType(com.mytube.model.MediaType.SONG));

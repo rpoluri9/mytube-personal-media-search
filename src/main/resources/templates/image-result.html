@@ -36,6 +36,25 @@
   .relcard img { width:100%; aspect-ratio:16/9; object-fit:cover; display:block; }
   .relcard .t { padding:8px 10px; font-size:13px; font-weight:600; }
   .back { display:inline-block; margin-bottom:14px; color:var(--muted); text-decoration:none; font-size:14px; }
+  .guess { display:inline-block; background:#0d47a1; color:#fff; font-size:14px; font-weight:bold;
+           padding:6px 14px; border-radius:14px; margin-bottom:10px; }
+  .entity { display:inline-block; background:#2c2c2c; color:#ddd; font-size:13px;
+            padding:4px 12px; border-radius:12px; margin:0 6px 6px 0; }
+  .ytgrid { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:12px; }
+  .ytcard { background:#262626; border-radius:10px; overflow:hidden; color:#fff; }
+  .ytcard img { width:100%; aspect-ratio:16/9; object-fit:cover; display:block; }
+  .ytcard .b { padding:10px 12px; }
+  .ytcard .t { font-size:14px; font-weight:600; margin-bottom:6px; }
+  .ytcard .t a { color:#fff; text-decoration:none; }
+  .ytcard .ch { font-size:13px; margin-bottom:6px; }
+  .ytcard .ch a { color:#3ea6ff; text-decoration:none; }
+  .ytcard .d { font-size:12px; color:#aaa; line-height:1.5;
+               display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+  .simgrid { display:grid; grid-template-columns:repeat(auto-fill,minmax(120px,1fr)); gap:8px; }
+  .simgrid img { width:100%; aspect-ratio:16/9; object-fit:cover; border-radius:8px; display:block; }
+  .pagelink { display:block; font-size:13px; color:#3ea6ff; text-decoration:none;
+              padding:6px 0; border-bottom:1px solid #2c2c2c; }
+  .note { font-size:13px; color:var(--muted); margin-top:8px; line-height:1.6; }
 </style>
 </head>
 <body>
@@ -46,10 +65,61 @@
 
   <div class="msg err" th:if="${error}" th:text="${error}">Error</div>
 
-  <div th:if="${result != null and !result.matched}" class="msg">
+  <div th:if="${result != null and !result.matched and (webIdentification == null or webIdentification.isEmpty())}" class="msg">
     <p th:text="'No close match found in your personal library'
         + (${result.hammingDistance} >= 0 ? ' (closest distance: ' + ${result.hammingDistance} + ').' : '.')">No match</p>
-    <p style="margin-top:8px; color:#aaa; font-size:14px;">Tip: upload a clearer screenshot of one of your library thumbnails.</p>
+    <p style="margin-top:8px; color:#aaa; font-size:14px;">Tip: upload a clearer screenshot of one of your library thumbnails —
+      or add a Google API key (see README) to identify <em>any</em> screenshot or photo.</p>
+  </div>
+
+  <div class="msg err" th:if="${webError}" th:text="${webError}">Web error</div>
+  <div class="msg err" th:if="${youTubeError}" th:text="${youTubeError}">YouTube error</div>
+
+  <div class="section" th:if="${webIdentification != null and !webIdentification.isEmpty()}">
+    <h3>🌐 About this image (from the web)</h3>
+    <div th:if="${webIdentification.bestGuessLabel}">
+      <span class="guess" th:text="${webIdentification.bestGuessLabel}">Best guess</span>
+    </div>
+    <div th:if="${!webIdentification.entities.isEmpty()}" style="margin-bottom:8px;">
+      <div th:each="e : ${webIdentification.entities}">
+        <span class="entity" th:text="${e.description}">Entity</span>
+      </div>
+      <p class="note">These are the topics Google associates with this picture — its history and context.</p>
+    </div>
+    <div th:if="${webIdentification.onScreenText}">
+      <h3 style="font-size:14px; margin:10px 0 4px;">On-screen text</h3>
+      <p class="note" th:text="${webIdentification.onScreenText}">text</p>
+    </div>
+    <div th:if="${!webIdentification.visuallySimilarImageUrls.isEmpty()}">
+      <h3 style="font-size:14px; margin:10px 0 8px;">Visually similar images</h3>
+      <div class="simgrid">
+        <a th:each="u : ${webIdentification.visuallySimilarImageUrls}" th:href="${u}" target="_blank" rel="noopener">
+          <img th:src="${u}" alt="Similar image" loading="lazy">
+        </a>
+      </div>
+    </div>
+    <div th:if="${!webIdentification.pagesWithMatchingImages.isEmpty()}">
+      <h3 style="font-size:14px; margin:10px 0 4px;">Pages with matching images</h3>
+      <a class="pagelink" th:each="p : ${webIdentification.pagesWithMatchingImages}"
+         th:href="${p.url}" target="_blank" rel="noopener"
+         th:text="${p.pageTitle != '' ? p.pageTitle : p.url}">Page</a>
+    </div>
+  </div>
+
+  <div class="section" th:if="${youTubeVideos != null and !youTubeVideos.isEmpty()}">
+    <h3>▶️ Related YouTube videos</h3>
+    <div class="ytgrid">
+      <div class="ytcard" th:each="v : ${youTubeVideos}">
+        <a th:href="${v.videoUrl}" target="_blank" rel="noopener">
+          <img th:if="${v.thumbnailUrl}" th:src="${v.thumbnailUrl}" th:alt="${v.title}" loading="lazy">
+        </a>
+        <div class="b">
+          <div class="t"><a th:href="${v.videoUrl}" target="_blank" rel="noopener" th:text="${v.title}">Title</a></div>
+          <div class="ch">📺 <a th:href="${v.channelUrl}" target="_blank" rel="noopener" th:text="${v.channelTitle}">Channel</a></div>
+          <div class="d" th:text="${v.description}">Description</div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <div th:if="${item != null}">

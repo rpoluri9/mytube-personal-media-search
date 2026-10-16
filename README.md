@@ -37,22 +37,53 @@ hashing (dHash).
    thumbnail's stored dHash and picks the smallest **Hamming distance**.
 4. Distance ≤ **10** → match. Otherwise → `match: null` with a friendly message.
 
-**Scope, stated plainly:** this matches against **your personal library**
-(16 items here) using perceptual hashing — it recognises a screenshot or
-resized copy of a library thumbnail, even after recompression. It is **not**
-a web-scale reverse-image search; it cannot identify arbitrary pictures from
-the internet. The `ImageMatchProvider` interface is the extension point for
-that (see below).
+**Scope, stated plainly:** without a Google API key this matches against
+**your personal library** (16 items here) using perceptual hashing — it
+recognises a screenshot or resized copy of a library thumbnail, even after
+recompression. It is **not** a web-scale reverse-image search on its own.
 
-### How to extend with a web-scale reverse-image API (e.g. SerpApi)
+### Web image search — identify ANY screenshot (optional, free)
 
-1. Add the SerpApi client dependency and API key to
-   `src/main/resources/application.properties`.
-2. Create `com.mytube.service.image.SerpApiMatchProvider implements ImageMatchProvider`
-   that uploads/queries the image and maps the top organic result back to a
-   `MediaItem` (or returns the web result directly).
-3. Annotate it `@Primary` — `ImageSearchController` depends only on the
-   interface, so **no controller changes are needed**.
+Add one free Google API key and image search goes beyond your library:
+
+1. **Upload anything** — a clean screenshot, **a camera photo of a screen**
+   (glare, angle and surroundings are fine — Vision understands the scene,
+   unlike the dHash), from your phone gallery or disk (JPEG/PNG; iPhone
+   HEIC — share or re-save as JPEG first, the app tells you if it can't
+   read the file).
+2. **"About this image"** — Cloud Vision identifies the picture: best-guess
+   label, entity descriptions (what it is / its history), on-screen text,
+   visually similar images and pages with matching images. If Vision is
+   unsure, you still get the similar images instead of nothing. On-screen
+   text is ranked by size and position, so a bottom ad banner (e.g.
+   "Bluehost") never hijacks the video title above it.
+3. **Related YouTube videos** — the exact original video first when Vision's
+   matching pages link to it (resolved via `videos.list`, so you get the
+   true **channel name + channel link** and video link), then related videos
+   from a YouTube Data API v3 search on the identified topic. Each result
+   shows title, channel name + channel link, video link, description and
+   thumbnail. Example: a Bigg Boss Shorts screenshot →
+   "About: Bigg Boss / Nagarjuna (actor)" + the Short itself with
+   @TheEditpioneer's channel link + more Bigg Boss videos.
+4. Your personal-library match still runs first and is always shown; web
+   failures never break it — they appear as a note, not a crash.
+
+#### Get the free key (5 steps, ~5 minutes)
+
+1. Go to **console.cloud.google.com** and create a project (any name).
+2. **APIs & Services → Library**: enable **"Cloud Vision API"**.
+3. In the Library, also enable **"YouTube Data API v3"**.
+4. **APIs & Services → Credentials → Create Credentials → API key**.
+5. Paste the key into `src/main/resources/application.properties`:
+   `mytube.google.api-key=PASTE_KEY_HERE` — then restart the app.
+
+One key covers both APIs. Free quotas (as of 2026): Vision —
+**~1,000 units/month free**, and one image search uses 2 units
+(`WEB_DETECTION` + `TEXT_DETECTION`), so roughly **~500 free image
+searches/month**; YouTube Data API v3 — 10,000 quota units/day free,
+`search` costs 100 units and `videos.list` costs 1, so roughly
+**~100 image searches/day free**. For personal use you won't pay anything.
+Without the key, the app behaves exactly like v1 (library only).
 
 ## Run it
 
@@ -129,7 +160,10 @@ JUnit 5 · MockMvc · Java2D · Maven
 
 ## Tests
 
-30 tests, all passing (`mvn test`): dHash unit tests (identical → 0,
+50 tests, all passing (`mvn test`): dHash unit tests (identical → 0,
 different → far, resized copy → close), search ranking tests, repository
-tests, seed-data tests, and MockMvc tests including multipart upload of a
-real generated thumbnail asserting the correct match.
+tests, seed-data tests, MockMvc tests including multipart upload of a
+real generated thumbnail asserting the correct match, plus web image-search
+tests (Vision fixture parsing, graceful API-error handling, YouTube fixture
+parsing, composite local+web merge, no-key v1 behaviour) — all with stubbed
+HTTP, no real API keys.

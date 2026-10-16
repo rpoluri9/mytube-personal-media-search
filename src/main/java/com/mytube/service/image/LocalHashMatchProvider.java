@@ -28,7 +28,8 @@ public class LocalHashMatchProvider implements ImageMatchProvider {
         BufferedImage image = DHashUtil.readImage(imageBytes);
         if (image == null) {
             throw new InvalidImageException(
-                    "The uploaded file could not be read as an image. Please upload a PNG or JPEG picture.");
+                    "The uploaded file could not be read as an image. Please upload a PNG or JPEG picture. "
+                            + "If this came from an iPhone, it may be HEIC — share or re-save it as JPEG first.");
         }
         long hash = DHashUtil.dhash(image);
 
