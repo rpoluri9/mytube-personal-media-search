@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Image search — MyTube</title>
+<style>
+  :root { --bg:#0f0f0f; --card:#1c1c1c; --text:#f1f1f1; --muted:#aaa; --accent:#ff0000; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { background:var(--bg); color:var(--text); font-family:Roboto,Arial,sans-serif; }
+  header { display:flex; gap:12px; align-items:center; padding:12px 20px; background:#000; }
+  .logo { font-size:24px; font-weight:bold; text-decoration:none; color:#fff; }
+  .logo span { background:var(--accent); border-radius:6px; padding:1px 6px; margin-right:4px; }
+  main { padding:20px; max-width:900px; margin:0 auto; }
+  .msg { background:var(--card); border-radius:12px; padding:20px; margin-bottom:16px; font-size:15px; }
+  .msg.err { border:1px solid #a33; }
+  .match { background:var(--card); border-radius:12px; overflow:hidden; margin-bottom:16px; }
+  .match img { width:100%; aspect-ratio:16/9; object-fit:cover; display:block; }
+  .match .body { padding:16px 18px; }
+  .match h1 { font-size:24px; margin-bottom:6px; }
+  .meta { color:var(--muted); font-size:14px; margin-bottom:10px; }
+  .dist { display:inline-block; background:#1b5e20; color:#fff; font-size:13px; font-weight:bold;
+          padding:4px 12px; border-radius:12px; margin-bottom:10px; }
+  .desc { font-size:14px; line-height:1.6; color:#ddd; margin-bottom:12px; }
+  .btn { display:inline-block; background:var(--accent); color:#fff; text-decoration:none;
+         padding:12px 22px; border-radius:20px; font-size:15px; }
+  .section { background:var(--card); border-radius:12px; padding:16px 18px; margin-bottom:16px; }
+  .section h3 { font-size:17px; margin-bottom:10px; }
+  .section p { font-size:14px; line-height:1.65; color:#ddd; white-space:pre-line; }
+  .songrow { display:flex; justify-content:space-between; padding:10px 4px;
+             border-bottom:1px solid #2c2c2c; font-size:14px; }
+  .songrow:last-child { border-bottom:none; }
+  .songrow a { color:#fff; text-decoration:none; }
+  .relgrid { display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:12px; }
+  .relcard { background:#262626; border-radius:10px; overflow:hidden; text-decoration:none; color:#fff; }
+  .relcard img { width:100%; aspect-ratio:16/9; object-fit:cover; display:block; }
+  .relcard .t { padding:8px 10px; font-size:13px; font-weight:600; }
+  .back { display:inline-block; margin-bottom:14px; color:var(--muted); text-decoration:none; font-size:14px; }
+</style>
+</head>
+<body>
+<header><a class="logo" href="/"><span>▶</span>MyTube</a></header>
+<main>
+  <a class="back" href="/">← Back to library</a>
+  <h2 style="margin-bottom:14px;">📷 Image search result</h2>
+
+  <div class="msg err" th:if="${error}" th:text="${error}">Error</div>
+
+  <div th:if="${result != null and !result.matched}" class="msg">
+    <p th:text="'No close match found in your personal library'
+        + (${result.hammingDistance} >= 0 ? ' (closest distance: ' + ${result.hammingDistance} + ').' : '.')">No match</p>
+    <p style="margin-top:8px; color:#aaa; font-size:14px;">Tip: upload a clearer screenshot of one of your library thumbnails.</p>
+  </div>
+
+  <div th:if="${item != null}">
+    <div class="match">
+      <img th:src="@{/thumbnails/{f}(f=${item.thumbnailFilename})}" th:alt="${item.title}">
+      <div class="body">
+        <span class="dist" th:text="'Match distance: ' + ${result.hammingDistance} + ' (≤ 10 = same picture)'">distance</span>
+        <h1 th:text="${item.title}">Title</h1>
+        <div class="meta" th:text="${item.type} + ' • ' + ${item.creator} + (${item.year} != null ? ' • ' + ${item.year} : '')">Meta</div>
+        <p class="desc" th:if="${item.description}" th:text="${item.description}">Description</p>
+        <a class="btn" th:href="@{/media/{id}(id=${item.id})}">Open full details →</a>
+      </div>
+    </div>
+
+    <div class="section" th:if="${item.plotSummary}">
+      <h3>📖 Story / Plot</h3>
+      <p th:text="${item.plotSummary}">Plot</p>
+    </div>
+
+    <div class="section" th:if="${!songs.isEmpty()}">
+      <h3>🎵 Songs</h3>
+      <div class="songrow" th:each="s : ${songs}">
+        <a th:href="@{/media/{id}(id=${s.id})}" th:text="${s.title}">Song</a>
+        <span style="color:#aaa; font-size:13px;" th:text="${s.creator}">Artist</span>
+      </div>
+    </div>
+
+    <div class="section" th:if="${!related.isEmpty()}">
+      <h3>🔗 Related media</h3>
+      <div class="relgrid">
+        <a class="relcard" th:each="r : ${related}" th:href="@{/media/{id}(id=${r.id})}">
+          <img th:src="@{/thumbnails/{f}(f=${r.thumbnailFilename})}" th:alt="${r.title}">
+          <div class="t" th:text="${r.title} + ' (' + ${r.type} + ')'">Related</div>
+        </a>
+      </div>
+    </div>
+  </div>
+</main>
+</body>
+</html>

@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title th:text="${item.title} + ' — MyTube'">Detail — MyTube</title>
+<style>
+  :root { --bg:#0f0f0f; --card:#1c1c1c; --text:#f1f1f1; --muted:#aaa; --accent:#ff0000; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { background:var(--bg); color:var(--text); font-family:Roboto,Arial,sans-serif; }
+  header { display:flex; gap:12px; align-items:center; padding:12px 20px; background:#000; }
+  .logo { font-size:24px; font-weight:bold; text-decoration:none; color:#fff; }
+  .logo span { background:var(--accent); border-radius:6px; padding:1px 6px; margin-right:4px; }
+  main { padding:20px; max-width:1000px; margin:0 auto; }
+  .hero img { width:100%; border-radius:12px; aspect-ratio:16/9; object-fit:cover; background:#222; }
+  .badge { display:inline-block; font-size:12px; font-weight:bold; padding:3px 10px; border-radius:10px;
+            margin:14px 0 8px; letter-spacing:.5px; }
+  .MOVIE { background:#7b1fa2; } .SONG { background:#00796b; }
+  .STORY { background:#e65100; } .VIDEO { background:#1565c0; }
+  h1 { font-size:28px; margin-bottom:6px; }
+  .meta { color:var(--muted); font-size:14px; margin-bottom:14px; }
+  .desc { font-size:15px; line-height:1.6; margin-bottom:20px; }
+  .section { background:var(--card); border-radius:12px; padding:16px 18px; margin-bottom:16px; }
+  .section h3 { font-size:17px; margin-bottom:10px; }
+  .section p { font-size:14px; line-height:1.65; color:#ddd; white-space:pre-line; }
+  .songrow { display:flex; justify-content:space-between; gap:10px; padding:10px 4px;
+             border-bottom:1px solid #2c2c2c; font-size:14px; }
+  .songrow:last-child { border-bottom:none; }
+  .songrow a { color:#fff; text-decoration:none; }
+  .songrow a:hover { color:var(--accent); }
+  .songrow .d { color:var(--muted); font-size:13px; }
+  .relgrid { display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:12px; }
+  .relcard { background:#262626; border-radius:10px; overflow:hidden; text-decoration:none; color:#fff; }
+  .relcard img { width:100%; aspect-ratio:16/9; object-fit:cover; display:block; }
+  .relcard .t { padding:8px 10px; font-size:13px; font-weight:600; }
+  .back { display:inline-block; margin-bottom:14px; color:var(--muted); text-decoration:none; font-size:14px; }
+  .back:hover { color:#fff; }
+</style>
+</head>
+<body>
+<header><a class="logo" href="/"><span>▶</span>MyTube</a></header>
+<main>
+  <a class="back" href="/">← Back to library</a>
+  <div class="hero"><img th:src="@{/thumbnails/{f}(f=${item.thumbnailFilename})}" th:alt="${item.title}"></div>
+  <span class="badge" th:classappend="${item.type}" th:text="${item.type}">MOVIE</span>
+  <h1 th:text="${item.title}">Title</h1>
+  <div class="meta" th:text="${item.creator} + (${item.year} != null ? ' • ' + ${item.year} : '')
+      + (${item.durationSec} != null ? ' • ' + ${item.durationSec / 60} + ' min' : '')">Meta</div>
+  <p class="desc" th:if="${item.description}" th:text="${item.description}">Description</p>
+
+  <div class="section" th:if="${item.plotSummary}">
+    <h3>📖 Story / Plot</h3>
+    <p th:text="${item.plotSummary}">Plot</p>
+  </div>
+
+  <div class="section" th:if="${!songs.isEmpty()}">
+    <h3>🎵 Songs</h3>
+    <div class="songrow" th:each="s : ${songs}">
+      <a th:href="@{/media/{id}(id=${s.id})}" th:text="${s.title}">Song</a>
+      <span class="d" th:text="${s.creator} + (${s.durationSec} != null ? ' • ' + ${s.durationSec / 60} + ':' + ${#numbers.formatInteger(s.durationSec % 60, 2)} : '')">Artist</span>
+    </div>
+  </div>
+
+  <div class="section" th:if="${!related.isEmpty()}">
+    <h3>🔗 Related media</h3>
+    <div class="relgrid">
+      <a class="relcard" th:each="r : ${related}" th:href="@{/media/{id}(id=${r.id})}">
+        <img th:src="@{/thumbnails/{f}(f=${r.thumbnailFilename})}" th:alt="${r.title}">
+        <div class="t" th:text="${r.title} + ' (' + ${r.type} + ')'">Related</div>
+      </a>
+    </div>
+  </div>
+</main>
+</body>
+</html>

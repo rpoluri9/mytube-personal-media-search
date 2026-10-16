@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MyTube — My Personal Media Library</title>
+<style>
+  :root { --bg:#0f0f0f; --card:#1c1c1c; --text:#f1f1f1; --muted:#aaa; --accent:#ff0000; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { background:var(--bg); color:var(--text); font-family:Roboto,Arial,sans-serif; }
+  header { display:flex; flex-wrap:wrap; gap:12px; align-items:center; padding:12px 20px;
+           background:#000; position:sticky; top:0; z-index:10; }
+  .logo { font-size:24px; font-weight:bold; text-decoration:none; color:#fff; }
+  .logo span { background:var(--accent); border-radius:6px; padding:1px 6px; margin-right:4px; }
+  .searchbar { flex:1 1 240px; display:flex; max-width:560px; }
+  .searchbar input { flex:1; padding:10px 14px; border:1px solid #333; border-radius:20px 0 0 20px;
+                     background:#121212; color:#fff; font-size:15px; }
+  .searchbar button { padding:10px 18px; border:none; border-radius:0 20px 20px 0;
+                     background:#333; color:#fff; cursor:pointer; font-size:15px; }
+  .imgsearch { display:flex; align-items:center; gap:8px; }
+  .imgsearch label { background:var(--accent); color:#fff; padding:10px 16px; border-radius:20px;
+                     cursor:pointer; font-size:14px; white-space:nowrap; }
+  .imgsearch input[type=file] { display:none; }
+  main { padding:20px; max-width:1400px; margin:0 auto; }
+  h2 { margin:6px 0 16px; font-size:20px; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:18px; }
+  .card { background:var(--card); border-radius:12px; overflow:hidden; text-decoration:none; color:inherit;
+          transition:transform .15s; display:block; }
+  .card:hover { transform:translateY(-3px); }
+  .card img { width:100%; aspect-ratio:16/9; object-fit:cover; display:block; background:#222; }
+  .card .body { padding:10px 12px 14px; }
+  .card .title { font-size:15px; font-weight:600; margin-bottom:4px; }
+  .card .meta { font-size:13px; color:var(--muted); }
+  .badge { display:inline-block; font-size:11px; font-weight:bold; padding:2px 8px; border-radius:10px;
+            margin-bottom:6px; letter-spacing:.5px; }
+  .MOVIE { background:#7b1fa2; } .SONG { background:#00796b; }
+  .STORY { background:#e65100; } .VIDEO { background:#1565c0; }
+  .empty { color:var(--muted); padding:40px 0; text-align:center; }
+</style>
+</head>
+<body>
+<header>
+  <a class="logo" href="/"><span>▶</span>MyTube</a>
+  <form class="searchbar" action="/" method="get">
+    <input type="text" name="q" placeholder="Search movies, songs, stories…" th:value="${query}">
+    <button type="submit">Search</button>
+  </form>
+  <form class="imgsearch" action="/search/image" method="post" enctype="multipart/form-data">
+    <label for="imgfile">📷 Image search</label>
+    <input id="imgfile" type="file" name="file" accept="image/*" onchange="this.form.submit()">
+  </form>
+</header>
+<main>
+  <h2 th:if="${query}" th:text="'Results for &quot;' + ${query} + '&quot;'">Results</h2>
+  <h2 th:unless="${query}">My Library</h2>
+  <div class="grid" th:if="${!items.isEmpty()}">
+    <a class="card" th:each="item : ${items}" th:href="@{/media/{id}(id=${item.id})}">
+      <img th:src="@{/thumbnails/{f}(f=${item.thumbnailFilename})}" th:alt="${item.title}">
+      <div class="body">
+        <span class="badge" th:classappend="${item.type}" th:text="${item.type}">MOVIE</span>
+        <div class="title" th:text="${item.title}">Title</div>
+        <div class="meta" th:text="${item.creator} + (${item.year} != null ? ' • ' + ${item.year} : '')">Creator</div>
+      </div>
+    </a>
+  </div>
+  <div class="empty" th:if="${items.isEmpty()}">Nothing found. Try another search — or tap 📷 Image search and upload a screenshot.</div>
+</main>
+</body>
+</html>
